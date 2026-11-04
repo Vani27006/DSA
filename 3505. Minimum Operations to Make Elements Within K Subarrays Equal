@@ -1,0 +1,113 @@
+class Solution {
+    public long minOperations(int[] nums, int x, int k) {
+     class Median {
+        java.util.TreeMap<Integer, Integer> l = new java.util.TreeMap<>();
+        java.util.TreeMap<Integer, Integer> r = new java.util.TreeMap<>();
+
+        int ls = 0, rs = 0;
+        long sumL = 0, sumR = 0;
+
+        void add(int v) {
+            if (l.isEmpty() || v <= l.lastKey()) {
+                l.merge(v, 1, Integer::sum);
+                ls++;
+                sumL += v;
+            } else {
+                r.merge(v, 1, Integer::sum);
+                rs++;
+                sumR += v;
+            }
+            balance();
+        }
+
+        void remove(int v) {
+            if (l.containsKey(v)) {
+                l.merge(v, -1, Integer::sum);
+                if (l.get(v) == 0) l.remove(v);
+                ls--;
+                sumL -= v;
+            } else {
+                r.merge(v, -1, Integer::sum);
+                if (r.get(v) == 0) r.remove(v);
+                rs--;
+                sumR -= v;
+            }
+            balance();
+        }
+
+        void balance() {
+            while (ls > rs + 1) {
+                int v = l.lastKey();
+                l.merge(v, -1, Integer::sum);
+                if (l.get(v) == 0) l.remove(v);
+                ls--;
+                sumL -= v;
+
+                r.merge(v, 1, Integer::sum);
+                rs++;
+                sumR += v;
+            }
+
+            while (ls < rs) {
+                int v = r.firstKey();
+                r.merge(v, -1, Integer::sum);
+                if (r.get(v) == 0) r.remove(v);
+                rs--;
+                sumR -= v;
+
+                l.merge(v, 1, Integer::sum);
+                ls++;
+                sumL += v;
+            }
+        }
+
+        long cost() {
+            long m = l.lastKey();
+            return m * ls - sumL + sumR - m * rs;
+        }
+    }
+
+    int n = nums.length;
+    Median med = new Median();
+
+    long[] cost = new long[n - x + 1];
+
+    for (int i = 0; i < x; i++) {
+        med.add(nums[i]);
+    }
+
+    cost[0] = med.cost();
+
+    for (int i = x; i < n; i++) {
+        med.remove(nums[i - x]);
+        med.add(nums[i]);
+        cost[i - x + 1] = med.cost();
+    }
+
+    long INF = Long.MAX_VALUE / 4;
+
+    long[] prev = new long[n + 1];
+    long[] curr = new long[n + 1];
+
+    for (int j = 1; j <= k; j++) {
+        java.util.Arrays.fill(curr, INF);
+
+        for (int i = 1; i <= n; i++) {
+            curr[i] = curr[i - 1];
+
+            if (i >= x) {
+                curr[i] = Math.min(
+                    curr[i],
+                    prev[i - x] + cost[i - x]
+                );
+            }
+        }
+
+        long[] temp = prev;
+        prev = curr;
+        curr = temp;
+    }
+
+    return prev[n]; 
+    }
+}
