@@ -1,0 +1,59 @@
+class Solution {
+    public int maximumSaleItems(int[][] items, int budget) {
+        int n = items.length;
+
+        int[] count = new int[n + 1];
+        int[] gain = new int[n + 1];
+
+        for (int[] item : items) {
+            count[item[0]]++;
+        }
+        for (int i = 1; i <= n; i++) {
+            for (int j = i; j <= n; j += i) {
+                gain[i] += count[j];
+            }
+            gain[i] -= count[i] > 0 ? 1 : 0;
+        }
+        Arrays.sort(items, (a, b) -> Integer.compare(a[1], b[1]));
+
+        PriorityQueue<long[]> pq = new PriorityQueue<>(
+            (a, b) -> Long.compare(a[0] * b[1], b[0] * a[1])
+        );
+
+        for (int[] item : items) {
+            int factor = item[0];
+            int price = item[1];
+
+            if (gain[factor] > 0) {
+                pq.offer(new long[]{price, 2, gain[factor]});
+            } else {
+                pq.offer(new long[]{price, 1, 0});
+            }
+        }
+        long ans = 0;
+        long money = budget;
+
+        while (money > 0 && !pq.isEmpty()) {
+            long[] curr = pq.poll();
+
+            long price = curr[0];
+            long value = curr[1];
+            long limit = curr[2];
+
+            if (value == 2) {
+                long buy = Math.min(limit, money / price);
+
+                ans += buy * 2;
+                money -= buy * price;
+
+                pq.offer(new long[]{price, 1, 0});
+            } else {
+                long buy = money / price;
+
+                ans += buy;
+                money -= buy * price;
+            }
+        }
+        return (int) ans;
+    }
+}
